@@ -127,14 +127,18 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * subclasses, but both need nonfair try for trylock method.
          */
         final boolean nonfairTryAcquire(int acquires) {
+            // 获取当前线程
             final Thread current = Thread.currentThread();
+            // 获取 state 状态
             int c = getState();
+            // 若state==0，则cas操作，若成功，则当前线程独占
             if (c == 0) {
                 if (compareAndSetState(0, acquires)) {
                     setExclusiveOwnerThread(current);
                     return true;
                 }
             }
+            // 若当前线程已是独占，则可重入锁，state自增
             else if (current == getExclusiveOwnerThread()) {
                 int nextc = c + acquires;
                 if (nextc < 0) // overflow
@@ -142,6 +146,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
                 setState(nextc);
                 return true;
             }
+            // 失败
             return false;
         }
 
@@ -195,6 +200,7 @@ public class ReentrantLock implements Lock, java.io.Serializable {
     /**
      * Sync object for non-fair locks
      */
+    // 非公平锁:获取锁资源不回按照申请锁资源的顺序执行
     static final class NonfairSync extends Sync {
         private static final long serialVersionUID = 7316153563782823691L;
 
@@ -202,10 +208,15 @@ public class ReentrantLock implements Lock, java.io.Serializable {
          * Performs lock.  Try immediate barge, backing up to normal
          * acquire on failure.
          */
+        // 加锁
         final void lock() {
+            // 与公平锁的不同之处
+            // cas操作，将state值由 0 改为 1
             if (compareAndSetState(0, 1))
+                // 修改state成功，则获取锁资源，并设置当前线程为独占模式，即AQS的获取锁资源的线程是本线程
                 setExclusiveOwnerThread(Thread.currentThread());
             else
+                // 若cas操作失败，则再次获取锁资源
                 acquire(1);
         }
 
