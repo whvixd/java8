@@ -151,14 +151,19 @@ public class ReentrantLock implements Lock, java.io.Serializable {
         }
 
         protected final boolean tryRelease(int releases) {
+            // 1. state自减
             int c = getState() - releases;
+            // 2. 若当前线程不是AQS中的独占线程，抛异常
             if (Thread.currentThread() != getExclusiveOwnerThread())
                 throw new IllegalMonitorStateException();
             boolean free = false;
+            // 3. c等于0时，即释放锁成功
             if (c == 0) {
                 free = true;
+                // 3.1 释放独占线程
                 setExclusiveOwnerThread(null);
             }
+            // 4. 赋值state
             setState(c);
             return free;
         }

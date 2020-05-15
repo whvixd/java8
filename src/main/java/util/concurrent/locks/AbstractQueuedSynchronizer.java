@@ -1305,9 +1305,12 @@ public abstract class AbstractQueuedSynchronizer
      * @return the value returned from {@link #tryRelease}
      */
     public final boolean release(int arg) {
+        // 1. 尝试释放锁
         if (tryRelease(arg)) {
             Node h = head;
+            // 1.1 头节点不为空，且状态不为0时
             if (h != null && h.waitStatus != 0)
+                // 唤起
                 unparkSuccessor(h);
             return true;
         }
