@@ -590,7 +590,7 @@ public abstract class AbstractQueuedSynchronizer
     private Node enq(final Node node) {
         for (;;) {
             Node t = tail;
-            // 尾节点为空，初始化头节点，head赋值到tail
+            // 尾节点为空，初始化头节点，head赋值到tail，再次自旋添加新节点到尾节点上
             if (t == null) { // Must initialize
                 if (compareAndSetHead(new Node()))
                     tail = head;
@@ -633,7 +633,7 @@ public abstract class AbstractQueuedSynchronizer
                 return node;
             }
         }
-        // 将节点插入队列，必要时进行初始化
+        // 如果尾节点为空，或者修改尾节点失败了，会自旋去修改尾节点，若尾节点为空，则初始化
         enq(node);
         return node;
     }
@@ -673,6 +673,7 @@ public abstract class AbstractQueuedSynchronizer
          * traverse backwards from tail to find the actual
          * non-cancelled successor.
          */
+        // head 只是指针作用，真正存储有效的thread是后继节点
         Node s = node.next;
         if (s == null || s.waitStatus > 0) {
             s = null;
@@ -895,6 +896,7 @@ public abstract class AbstractQueuedSynchronizer
         boolean failed = true;
         try {
             boolean interrupted = false;
+            // 自旋判断前置节点是否为头节点
             for (;;) {
                 // 获取前置节点
                 final Node p = node.predecessor();
@@ -909,7 +911,7 @@ public abstract class AbstractQueuedSynchronizer
                 }
                 // 如果前驱节点不是头节点，或者同步状态失败了，则park当前节点并且state=-1，等待前驱节点unpark
                 if (shouldParkAfterFailedAcquire(p, node) &&
-                    // park当前线程并状态为 interrupted
+                    // park当前线程并状态为 interrupted，等下次唤醒
                     parkAndCheckInterrupt())
                     interrupted = true;
             }
